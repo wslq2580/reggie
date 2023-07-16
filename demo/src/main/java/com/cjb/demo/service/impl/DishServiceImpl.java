@@ -11,10 +11,12 @@ import com.cjb.demo.service.DishFlavorService;
 import com.cjb.demo.service.DishService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,6 +24,9 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 
     @Autowired
     private DishFlavorService dishFlavorService;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     @Transactional
     @Override //新增菜品同时保存对应的口味数据
@@ -36,6 +41,10 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
         }).collect(Collectors.toList()); //遍历口味数组，给每个口味设置菜品ID，再组成新的数组
 
         dishFlavorService.saveBatch(flavor);//保存口味数据到口味表dish_flavor
+
+        Long categoryId = dishDTO.getCategoryId();
+        Set keys = redisTemplate.keys("dish_"+categoryId + "_1");//清理该分类菜品redis数据
+        redisTemplate.delete(keys);
     }
 
     @Override //根据id查询菜品信息和口味信息
@@ -77,5 +86,9 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
             return item;
         }).collect(Collectors.toList()); //遍历口味数组，给每个口味设置菜品ID，再组成新的数组
         dishFlavorService.saveBatch(flavors);
+
+        Long categoryId = dishDTO.getCategoryId();
+        Set keys = redisTemplate.keys("dish_"+categoryId + "_1");//清理该分类菜品redis数据
+        redisTemplate.delete(keys);
     }
 }
