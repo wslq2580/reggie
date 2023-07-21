@@ -10,6 +10,7 @@ import com.cjb.demo.utils.ValidateCodeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,6 +31,9 @@ public class UserController {
 
     @Autowired
     private RedisTemplate redisTemplate;  //验证码存到redis
+
+    @Autowired
+    private CacheManager cacheManager;
 
     /**
      * 发送手机短信验证码

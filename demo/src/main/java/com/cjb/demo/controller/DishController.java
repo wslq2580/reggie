@@ -1,6 +1,8 @@
 package com.cjb.demo.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.cjb.demo.DTO.DishDTO;
 import com.cjb.demo.common.R;
@@ -119,6 +121,16 @@ public class DishController {
 //        return R.success(list2);
 //    }
 
+    @DeleteMapping
+    public R<String> delete(@RequestParam List<Long> ids){
+        dishService.removeBatchByIds(ids);
+        LambdaQueryWrapper<DishFlavor> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        lambdaQueryWrapper.in(DishFlavor::getDishId,ids);
+        dishFlavorService.remove(lambdaQueryWrapper);
+
+        return R.success("删除成功");
+    }
+
     @GetMapping("/list")  //根据条件查询redis中对应的菜品数据，如果没有查询到，则去数据库查
     public R<List<DishDTO>> list(Dish dish){
         List<DishDTO> dishDTOList = null;
@@ -158,6 +170,35 @@ public class DishController {
 
             redisTemplate.opsForValue().set(key,dishDTOList);//并将查询到的数据存入redis
             return R.success(dishDTOList);
+        }
+
+    }
+
+    @PostMapping("/status/{status}")
+    public R<String> updateStatus(@PathVariable int status,@RequestParam List<Long> ids){
+        if(status == 0){ //停售操作
+            for(Long id : ids){
+                LambdaQueryWrapper<Dish> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+                lambdaQueryWrapper.eq(Dish::getId,id);
+                Dish dish = dishService.getOne(lambdaQueryWrapper);
+                if(dish.getStatus() == 1){
+                    dish.setStatus(0);
+                    dishService.updateById(dish);
+                }
+                }
+            return R.success("停售成功");
+            }
+        else{ //起售操作
+            for(Long id : ids){
+                LambdaQueryWrapper<Dish> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+                lambdaQueryWrapper.eq(Dish::getId,id);
+                Dish dish = dishService.getOne(lambdaQueryWrapper);
+                if(dish.getStatus() == 0){
+                    dish.setStatus(1);
+                    dishService.updateById(dish);
+                }
+            }
+            return R.success("起售成功");
         }
 
     }
